@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚗 Sistema de Recomendação Automotivo - Sauter Digital
 
 Este projeto apresenta um MVP de um motor de recomendação desenvolvido para a plataforma **Sauter Digital**. O objetivo é aumentar a retenção de usuários sugerindo veículos de marcas concorrentes com características técnicas e preços equivalentes.
