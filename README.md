@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🚗 Sistema de Recomendação Automotivo - Sauter Digital
 
 Este projeto apresenta um MVP de um motor de recomendação desenvolvido para a plataforma **Sauter Digital**. O objetivo é aumentar a retenção de usuários sugerindo veículos de marcas concorrentes com características técnicas e preços equivalentes.
@@ -29,3 +30,7 @@ Validação realizada via **Testes de Cenário Lógico**, garantindo que as saí
 1. Certifique-se de ter o arquivo `fipe_2022.csv` na pasta.
 2. Instale as dependências: `pip install pandas scikit-learn`.
 3. Execute o notebook `projeto_recomendacao.ipynb`.
+=======
+# challenge_sauter
+MVP de busca de automóveis 
+>>>>>>> 420bcdb6987961a623b8797daa32ae876828076a
