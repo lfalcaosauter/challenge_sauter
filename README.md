@@ -1,36 +1,76 @@
-<<<<<<< HEAD
-# 🚗 Sistema de Recomendação Automotivo - Sauter Digital
+## Sistema de Recomendação Automotivo - Sauter Digital
+Este repositório contém o MVP de um motor de recomendação desenvolvido para a plataforma Sauter Digital. O objetivo principal é mitigar o problema de Cold Start e aumentar a retenção de usuários, sugerindo veículos de marcas concorrentes com especificações técnicas e faixas de preço similares ao interesse original do cliente.
 
-Este projeto apresenta um MVP de um motor de recomendação desenvolvido para a plataforma **Sauter Digital**. O objetivo é aumentar a retenção de usuários sugerindo veículos de marcas concorrentes com características técnicas e preços equivalentes.
+# 📌 Contexto do Projeto
+A plataforma identificou que usuários muitas vezes abandonam o portal por falta de opções comparativas. O novo sistema de recomendação "Others you may like" foi projetado para atuar como um consultor virtual, apresentando alternativas de mercado que o usuário talvez não tenha considerado.
 
-## 📌 Contexto e Problema
-A plataforma identificou baixa retenção pois o sistema sugeria apenas modelos idênticos. O novo carrossel **"Others you may like"** foca em alternativas de mercado para manter o cliente engajado.
+# 🛠️ Solução Técnica
+1. Pipeline de Dados e Feature Engineering
+Filtro Temporal: O dataset foi restrito ao mês de Janeiro de 2022 para garantir a estabilidade dos preços e evitar modelos duplicados.
 
-## 🛠️ Solução Técnica
+Tratamento de Dados: Limpeza de colunas irrelevantes e criação da feature age_years (Idade do Veículo).
 
-### 1. Desafio do Cold Start
-Como a plataforma não possui histórico prévio, utilizamos **Filtragem Baseada em Conteúdo (Content-Based Filtering)**, baseando-se exclusivamente nos atributos técnicos do dataset FIPE.
+Encoding & Scaling: Variáveis categóricas convertidas via One-Hot Encoding e variáveis numéricas (Preço e Motor) normalizadas com StandardScaler para evitar vieses de grandeza.
 
-### 2. Engenharia de Atributos
-* **Seleção:** Descartamos IDs internos e mantivemos atributos decisores (Motor, Câmbio, Preço, etc).
-* **Escalonamento:** Utilizamos `StandardScaler` para normalizar o preço e o motor, evitando que a diferença de grandeza enviesasse o cálculo.
-* **Encoding:** Variáveis categóricas foram convertidas via `One-Hot Encoding`.
+Busca Semântica: Implementação de uma chave de busca combinada (brand + model + year) para facilitar a localização do veículo alvo.
 
-### 3. O Motor Matemático
-Utilizamos a **Similaridade de Cosseno (Cosine Similarity)**. Esta métrica foca na "direção" dos atributos, sendo ideal para identificar perfis de veículos similares.
+2. O Motor Matemático
+Utilizamos a Similaridade de Cosseno (Cosine Similarity). Esta métrica calcula o "ângulo" entre os vetores de características dos carros. Quanto mais próximo de 1.0, mais tecnicamente semelhantes são os veículos.
 
-### 4. Regras de Negócio
-* **Diversificação de Marcas:** Filtro obrigatório para exibir apenas marcas diferentes da buscada.
-* **Coerência de Preço:** Trava lógica de **±25%** sobre o valor do carro alvo.
+3. Regras de Negócio (Filtros de Saída)
+O algoritmo não entrega apenas o que é parecido, ele aplica filtros estratégicos para o negócio:
 
-## 🧪 Estratégia de Validação
-Validação realizada via **Testes de Cenário Lógico**, garantindo que as saídas (ex: buscar Corolla e receber Civic) façam sentido comercial.
+Regra de Ouro (Diversificação): Bloqueio automático de sugestões da mesma marca do veículo pesquisado, forçando a apresentação de concorrentes.
+
+Coerência de Preço: Trava lógica de ±25% sobre o valor do carro original, garantindo que a recomendação seja financeiramente viável para o perfil do cliente.
+
+Ranking: Exibição qualificada do Top 10 resultados.
 
 ## 🚀 Como Executar
-1. Certifique-se de ter o arquivo `fipe_2022.csv` na pasta.
-2. Instale as dependências: `pip install pandas scikit-learn`.
-3. Execute o notebook `projeto_recomendacao.ipynb`.
-=======
-# challenge_sauter
-MVP de busca de automóveis 
->>>>>>> 420bcdb6987961a623b8797daa32ae876828076a
+1. Pré-requisitos
+Python 3.12+
+
+Arquivo fipe_2022.csv na raiz do projeto.
+
+2. Instalação
+Clone o repositório e instale as dependências:
+
+Bash
+# Criar ambiente virtual
+python -m venv venv
+source venv/bin/activate  # No Windows: .\venv\Scripts\activate
+
+# Instalar bibliotecas
+pip install -r requirements.txt
+3. Uso do Sistema
+Abra o arquivo projeto_recomendacao.ipynb no VS Code ou Jupyter:
+
+Execute todas as células (Run All).
+
+Localize a última célula: uma caixa de texto aparecerá no topo do VS Code.
+
+Digite a marca ou modelo (Ex: "Civic 2015" ou "Toyota") e pressione Enter.
+
+O sistema identificará o veículo e gerará a tabela comparativa instantaneamente.
+
+# 🧪 Estratégia de Validação
+A validação foi realizada via Testes de Cenário Lógico.
+
+Exemplo: Ao buscar um "Toyota Corolla", o sistema valida com sucesso a entrega de modelos como "Honda Civic" ou "Chevrolet Cruze", respeitando rigorosamente a similaridade técnica e as travas de preço.
+
+# 🧰 Tecnologias Utilizadas
+Python 3.x
+
+Pandas: Manipulação de dados.
+
+Scikit-Learn: Escalonamento, Encoding e Cálculo de Similaridade.
+
+NumPy: Operações matriciais.
+
+Dica para o arquivo requirements.txt
+Não esqueça de criar este arquivo na mesma pasta com o seguinte conteúdo:
+
+Plaintext
+pandas
+scikit-learn
+numpy
