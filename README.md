@@ -1,64 +1,76 @@
-## Sistema de Recomendação Automotivo — Sauter Digital (MVP)
+## Sistema de Recomendacao de Veiculos — Sauter Digital (MVP)
 
-Este repositório contém o MVP de um motor de recomendação desenvolvido para a Sauter Digital. O objetivo principal é mitigar o problema de **Cold Start** e aumentar a retenção de usuários, sugerindo veículos de marcas concorrentes com especificações técnicas e faixas de preço similares ao interesse original do cliente.
+MVP de um motor de recomendacao que sugere veiculos similares de **marcas concorrentes**, resolvendo o problema de **Cold Start** em uma plataforma nova de classificados automotivos sem historico de navegacao dos usuarios.
 
-## Contexto do Projeto
+## O Problema
 
-Foi observado que usuários muitas vezes abandonam o portal por falta de opções comparativas. O novo sistema de recomendação **"Others you may like"** foi projetado para atuar como um consultor virtual, apresentando alternativas de mercado que o usuário talvez não tenha considerado.
+A Sauter Digital, plataforma emergente de classificados de veiculos, tinha uma secao "Carros Similares" que exibia apenas veiculos identicos (mesma marca e modelo). Se o cliente nao encontrava o preco ou quilometragem ideal naquele modelo, abandonava o site.
 
-## Solução Técnica
+## A Solucao
 
-### 1. Pipeline de Dados e Feature Engineering
+Uma secao **"Outros que voce pode gostar"** que usa **Recomendacao Baseada em Conteudo (Content-Based Filtering)** — a inteligencia vem das caracteristicas dos proprios veiculos (motor, preco, idade, combustivel, cambio), sem depender de dados comportamentais.
 
-- **Filtro Temporal:** Dataset restrito ao mês de Janeiro de 2022 para garantir estabilidade de preços e evitar duplicidade mensal.
-- **Deduplicação:** Remoção de veículos com características idênticas (marca, modelo, câmbio, combustível, motor e idade).
-- **Tratamento de Dados:** Limpeza de colunas irrelevantes (`fipe_code`, `authentication`, metadados temporais) e seleção de features relevantes.
-- **Encoding & Scaling:** Variáveis categóricas (`fuel`, `gear`) convertidas via One-Hot Encoding com `drop='if_binary'`. Variáveis numéricas (`engine_size`, `age_years`, `avg_price_brl`) normalizadas com **RobustScaler** para resistência a outliers de preço.
-- **Busca Textual:** Chave de busca combinada (marca + modelo + ano + motor) para localização flexível do veículo.
+## Dados
 
-### 2. O Motor Matemático
+Dataset da **Tabela FIPE** extraido do Kaggle (`vagnerbessa/average-car-prices-bazil`), com 290.275 registros filtrados para **24.031 veiculos unicos** (Janeiro/2022, deduplicados).
 
-Utilizamos a **Similaridade de Cosseno** (Cosine Similarity). Esta métrica calcula o "ângulo" entre os vetores de características dos carros. Quanto mais próximo de 1.0, mais tecnicamente semelhantes são os veículos. Escolhida em vez da Distância Euclidiana por ser insensível à magnitude dos vetores, capturando o **perfil** do veículo.
+Colunas utilizadas: `brand`, `model`, `fuel`, `gear`, `engine_size`, `year_model`, `avg_price_brl`, `age_years`.
 
-### 3. Regras de Negócio (Filtros de Saída)
+## Arquitetura do Notebook
 
-- **Priorização de Marcas Concorrentes:** O carrossel prioriza veículos de outras marcas, mas completa com a mesma marca quando não há concorrentes suficientes — garantindo que o carrossel nunca fique vazio.
-- **Coerência de Preço:** Trava lógica de ±25% sobre o valor do carro original.
-- **Ranking:** Exibição qualificada do Top 10 resultados ordenados por similaridade.
+O projeto esta todo em `mvp_recomendador_automotivo.ipynb`, dividido em:
 
-### 4. Validação
+### 1. Ingestao e Limpeza
+- Filtro temporal (Janeiro/2022) para evitar duplicidade mensal
+- Remocao de colunas sem valor preditivo (`fipe_code`, `authentication`, metadados temporais)
+- Deduplicacao por combinacao de marca + modelo + cambio + combustivel + motor + idade
+- Criacao de chave de busca textual (`termo_busca`) para pesquisa livre
 
-Bateria de **testes programáticos de cenário lógico** cobrindo diferentes segmentos de mercado (popular, médio, luxo, antigo). Cada cenário valida: priorização de marca, margem de preço, similaridade positiva, ausência de duplicatas, respeito ao limite de resultados e exclusão do próprio veículo.
+### 2. Feature Engineering
+- **Variaveis numericas** (`engine_size`, `age_years`, `avg_price_brl`): normalizadas com **RobustScaler** (resistente a outliers — precos variam de R$1.831 a R$7.695.250)
+- **Variaveis categoricas** (`fuel`, `gear`): codificadas via **One-Hot Encoding** com `drop='if_binary'`
+- `year_model` excluido por ser linearmente dependente de `age_years`
+
+### 3. Motor de Recomendacao
+- **Similaridade de Cosseno** como metrica — mede a direcao dos vetores (perfil do veiculo), nao a magnitude. Combinada com RobustScaler, forma dupla camada de protecao contra distorcoes de escala
+- **Priorizacao de marcas concorrentes:** preenche o carrossel com outras marcas primeiro; completa com mesma marca se necessario (evita carrossel vazio em nichos)
+- **Coerencia de preco:** margem de +-25% sobre o valor do carro original
+- **Ranking:** Top N resultados ordenados por score de similaridade
+
+### 4. Interface Interativa
+- Busca flexivel por termos livres (ex: "corolla 2020", "toyota 1.8")
+- Selecao numerada do veiculo exato
+- Painel visual HTML com os dados do carro e tabela estilizada das recomendacoes
+
+### 5. Bateria de Testes
+- **10 testes automatizados** cobrindo diferentes segmentos: hatch popular, sedan medio, sedan premium, pickup diesel, carro antigo, esportivo exotico, ultra-barato, ultra-luxo e nicho militar
+- **Teste de estresse** com 9 pares extremos comparados diretamente (sem filtros de negocio), validando que o motor diferencia desde carros quase identicos (score >95%) ate veiculos de universos opostos (ex: Fiat Uno 1.5 1995 R$4k vs Toyota Hilux 2.8 2023 diesel R$235k)
 
 ## Como Executar
 
-### Pré-requisitos
-
+### Pre-requisitos
 - Python 3.10+
 - Arquivo `fipe_2022.csv` na raiz do projeto
 
-### Instalação
+### Instalacao
 
 ```bash
-# Criar ambiente virtual
 python -m venv venv
-source venv/bin/activate  # No Windows: .\venv\Scripts\activate
-
-# Instalar bibliotecas
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Uso do Sistema
+### Uso
 
-1. Abra o arquivo `mvp_recomendador_automotivo.ipynb` no VS Code ou Jupyter
-2. Execute todas as células (**Run All**)
-3. Na seção interativa, digite a marca ou modelo (Ex: "Civic 2015" ou "Toyota") e pressione Enter
-4. O sistema identificará o veículo e gerará a tabela comparativa
-5. A seção de validação roda automaticamente, exibindo os resultados dos testes
+1. Abra `mvp_recomendador_automotivo.ipynb` no VS Code ou Jupyter
+2. Execute todas as celulas (**Run All**)
+3. Na secao 4, digite marca/modelo/ano (ex: "Civic 2015") e selecione o veiculo
+4. As secoes 5 e 5.1 rodam automaticamente com os testes de validacao
 
-## Tecnologias Utilizadas
+## Tecnologias
 
-- **Python 3.x**
-- **Pandas:** Manipulação e limpeza de dados
-- **Scikit-Learn:** RobustScaler, OneHotEncoder e Cosine Similarity
-- **NumPy:** Operações matriciais
+| Biblioteca | Uso |
+|---|---|
+| **Pandas** | Manipulacao e limpeza de dados |
+| **Scikit-Learn** | RobustScaler, OneHotEncoder, Cosine Similarity |
+| **IPython** | Interface interativa com HTML estilizado |
